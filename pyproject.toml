@@ -1,7 +1,7 @@
 [project]
 name = "external-data-gallery"
 version = "0.1.0"
-description = "Add your description here"
+description = "Gallery of scripts and notebooks demonstrating access to external data sources."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
