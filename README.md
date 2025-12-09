@@ -7,7 +7,7 @@ The gallery is organized into two sections.
 
 ## Examples
 
-In `examples/` are complete scripts used for specific research applications that have been contributed to the gallery. They often make use of data from several providers and in a number of formats. They are typically in Python or R and can include complex data processesing steps. Instructions for running the scripts are included in a README for each example.
+In `examples/` are complete scripts used for specific research applications that have been contributed to the gallery. They often make use of data from several providers and in a number of formats. They are typically in Python or R and can include complex data processesing steps. Instructions for running the scripts are included in a `README` for each example.
 
 ## Notebooks
 
