@@ -1,0 +1,21 @@
+name: Jupyter Notebook Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-notebooks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build the Docker image
+        run: docker build -t notebook-tests -f docker/Dockerfile .
+
+      - name: Run notebook tests
+        run: docker run --rm notebook-tests

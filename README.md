@@ -1,4 +1,6 @@
 # external-data-gallery
+[![License](https://img.shields.io/github/license/cohere-llc/external-data-gallery.svg)](https://github.com/cohere-llc/external-data-gallery/blob/main/LICENSE)
+[![Docker](https://github.com/cohere-llc/external-data-gallery/actions/workflows/notebook-tests.yml/badge.svg)](https://github.com/cohere-llc/external-data-gallery/actions/workflows/notebook-tests.yml)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cohere-llc/external-data-gallery/HEAD?filepath=notebooks)
 
 Gallery of scripts for working with 3rd party data providers
