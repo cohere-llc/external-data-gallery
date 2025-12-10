@@ -1,4 +1,4 @@
-from fedora:latest
+FROM fedora:latest
 
 # Install Python and uv
 RUN dnf update -y && \
