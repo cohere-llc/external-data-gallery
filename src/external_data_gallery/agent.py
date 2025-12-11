@@ -25,3 +25,15 @@ class DataAgent:
     def __repr__(self) -> str:
         return json.dumps({k: v for k, v in self.data_sources.items()}, indent=2)
     
+    def query(self, natural_language_query: str) -> Dict[str, Any]:
+        """Convert natural language to executable query and return results"""
+        # This is a placeholder for the actual implementation
+        # which would involve using the Anthropic API to parse
+        # the natural language query, generate code, and execute it.
+        return {
+            "query": natural_language_query,
+            "interpretation": "Parsed intent (placeholder)",
+            "code": "Generated code (placeholder)",
+            "results": "Query results (placeholder)"
+        }
+    
