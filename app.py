@@ -36,6 +36,10 @@ for msg in st.session_state.messages:
                 with st.expander("🔍 External Query Details"):
                     st.json(msg["content"]["external_query"])
 
+            if "code" in msg["content"] and msg["content"]["code"]:
+                with st.expander("💻 Generated Code"):
+                    st.code(msg["content"]["code"], language="python")
+
             if "results" in msg["content"] and msg["content"]["results"]:
                 with st.expander("📊 Query Results"):
                     st.write(msg["content"]["results"])
@@ -57,7 +61,7 @@ if prompt := st.chat_input():
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
 
-    with st.spinner("Thinking (not really, but let's pretend) ..."):
+    with st.spinner("Thinking ...    (not really, but let's pretend)"):
         response = agent.query(
             natural_language_query=prompt,
             conversation_history=st.session_state.query_context
@@ -66,8 +70,9 @@ if prompt := st.chat_input():
     st.session_state.query_context.append({
         "query": prompt,
         "response": response.get("response", ""),
-        "external_query": response.get("external_query", {}),   
-        "results": response.get("results", "")[:50],
+        "external_query": response.get("external_query", {}),
+        "code": response.get("code", ""),
+        "results": response.get("results", ""),
         "logs": response.get("logs", [])
     })
 

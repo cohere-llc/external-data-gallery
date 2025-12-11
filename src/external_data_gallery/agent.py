@@ -46,13 +46,13 @@ class DataAgent:
             logs
         )
 
-        code = ""
-        results = ""
+        code: str | None = None
+        results: str | None = None
 
         if external_query is not None:
 
             # Step 2: Generate executable code (not implemented here)
-            code = "Generated code (placeholder)"
+            code = self._generate_query_code(external_query, conversation_history, logs)
 
             # Step 3: Execute safely and return results (not implemented here)
             results = "Query results (placeholder)"
@@ -118,6 +118,9 @@ Provide the parsed intent as a JSON object with keys:
 - sub_queries: List of sub-queries with data source and filters following schema from data source definitions.
 - final_aggregation: Plain language description of final aggregation to perform on sub-query results.
 
+Each sub-query object should have a "data_source" key that is one of the available data sources,
+and any relevant query parameters (filters, variables, etc) for each specific data source.
+
 Return only the JSON object preceded by `EXTERNAL_QUERY`, without any additional text.
 """
         response = self.client.messages.create(
@@ -158,4 +161,62 @@ Return only the JSON object preceded by `EXTERNAL_QUERY`, without any additional
 
         logs.append("Determined response with "f"{len(external_query.get('sub_queries', []))} sub-queries")
         return external_query, None
+    
+    def _generate_query_code(
+        self,
+        external_query: Dict[str, Any],
+        conversation_history: List[Dict[str, Any]],
+        logs: list[str]
+    ) -> str:
+        """Generate Dask code from intent"""
+
+        context_text = ""
+        if conversation_history:
+            context_text = "\n\nPrevious conversation history:\n"
+            for turn in conversation_history[-5:]:  # last 5 turns
+                context_text += f"User asked: {turn['query']}\n"
+                if turn.get("response"):
+                    context_text += f"Agent responded: {turn['response']}\n"
+                if turn.get("external_query"):
+                    context_text += f"External query: {json.dumps(turn['external_query'], indent=2)}\n"
+                if turn.get("results"):
+                    context_text += f"Results: {turn['results']}\n"
+        
+
+        system_prompt = """You are a Python data science expert.
+Given a structured external query intent, generate safe, efficient
+Python code using Dask to execute the query.
+
+Return ONLY the code, without any additional text.
+"""
+        user_prompt = f"""
+Data source info: {self.data_sources}
+Structured external query intent: {json.dumps(external_query, indent=2)}
+
+{context_text}
+
+Generate Python code using Dask to execute a series of sub-queries
+and a final aggregation step, as specified in the intent. The
+code must be in a function named `execute_query()` that returns the final results
+as a pandas or Dask DataFrame.
+
+Remember that each sub-query may involve different data sources,
+and that datasets may be large and require caching and efficient parallel
+processing.
+"""
+        response = self.client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=2048,
+            system=system_prompt,
+            messages=[
+                {"role": "user", "content": user_prompt}
+            ]
+        )
+
+        code = response.content[0].text
+        if "```python" in code:
+            code = code.split("```python", 1)[1].rsplit("```", 1)[0].strip()
+
+        logs.append("Generated query code.")
+        return code
     

@@ -20,6 +20,23 @@ def schema() -> Dict[str, Any]:
     fs = s3fs.S3FileSystem(anon=True)
     folders = fs.ls("gbif-open-data-af-south-1/occurrence/")
     dates = [folder.split("/")[-1] for folder in folders if folder.split("/")[-1].count("-") == 2]
+    query_template = f"""
+```python
+import dask
+import dask.dataframe as dd
+
+def execute_query():
+    dask.config.set(scheduler='threads')
+    df = dd.read_parquet(
+        "s3://gbif-open-data-af-south-1/occurrence/{{PARTITION}}/occurrence.parquet/",
+        storage_options={{"anon": True}},
+        engine="pyarrow",
+        parquet_file_extension=""
+    )
+    reduced_df = df[df['species'] == '{{SPECIES_NAME}}'].compute()
+    return reduced_df
+```
+"""
 
     return {
       "name": "Global Biodiversity Information Facility Species Occurrence Data",
@@ -29,5 +46,6 @@ def schema() -> Dict[str, Any]:
       "location": "s3://gbif-open-data-parquet/occurrence/",
       "fields": fields,
       "partitions": dates,
-      "notes": "Data is stored in Parquet format on AWS S3. Each monthly partition contains occurrence records for that month. Use Dask to efficiently query and analyze the data. Folder structure is s3://gbif-open-data-af-south-1/occurrence/{YYYY-MM-DD}/occurrence.parquet/"
+      "notes": "Data is stored in Parquet format on AWS S3. Each monthly partition contains occurrence records for that month. Use Dask to efficiently query and analyze the data. Folder structure is s3://gbif-open-data-af-south-1/occurrence/{YYYY-MM-DD}/occurrence.parquet/",
+      "query_template": query_template
     }
