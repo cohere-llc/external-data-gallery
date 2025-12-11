@@ -10,14 +10,42 @@ with st.sidebar:
         help="Enter your Anthropic API key to use the AI agent.",
     )
 
+    if st.button("🗑️ Clear Conversation"):
+        st.session_state.messages = []
+        st.session_state.query_context = []
+        st.rerun()
+
 st.title("🌍 Environmental Data Assistant")
 st.caption("💬 Ask questions about environmental data in natural language")
 
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hello! How can I assist you with environmental data today?"}]
+    st.session_state.messages = [
+        {"role": "assistant", "content": "Hello! How can I assist you with environmental data today?"}
+    ]
+
+if "query_context" not in st.session_state:
+    st.session_state.query_context = []
 
 for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+    with st.chat_message(msg["role"]):
+        if isinstance(msg["content"], dict):
+            if "response" in msg["content"] and msg["content"]["response"]:
+                st.write(msg["content"]["response"])
+
+            if "external_query" in msg["content"] and msg["content"]["external_query"]:
+                with st.expander("🔍 External Query Details"):
+                    st.json(msg["content"]["external_query"])
+
+            if "results" in msg["content"] and msg["content"]["results"]:
+                with st.expander("📊 Query Results"):
+                    st.write(msg["content"]["results"])
+
+            if "logs" in msg["content"] and msg["content"]["logs"]:
+                with st.expander("📝 Logs"):
+                    for log in msg["content"]["logs"]:
+                        st.text(log)
+        else:
+            st.write(msg["content"])
 
 if prompt := st.chat_input():
     if not anthropic_api_key:
@@ -25,9 +53,24 @@ if prompt := st.chat_input():
         st.stop()
 
     agent = DataAgent(api_key=anthropic_api_key)
-    response = agent.query(natural_language_query=prompt)
 
     st.session_state.messages.append({"role": "user", "content": prompt})
+    st.chat_message("user").markdown(prompt)
+
+    with st.spinner("Thinking (not really, but let's pretend) ..."):
+        response = agent.query(
+            natural_language_query=prompt,
+            conversation_history=st.session_state.query_context
+        )
+
+    st.session_state.query_context.append({
+        "query": prompt,
+        "response": response.get("response", ""),
+        "external_query": response.get("external_query", {}),   
+        "results": response.get("results", "")[:50],
+        "logs": response.get("logs", [])
+    })
+
     st.session_state.messages.append({"role": "assistant", "content": response})
-    st.chat_message("user").write(prompt)
-    st.chat_message("assistant").write(response)
+
+    st.rerun()
