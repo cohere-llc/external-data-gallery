@@ -20,8 +20,8 @@ def schema() -> Dict[str, Any]:
     query_template = """
 ```python
 import zarr
-from zarr.storage import FsspecStore
-from zarr.experimental import CacheStore
+from zarr.storage import FsspecStore, MemoryStore
+from zarr.experimental.cache_store import CacheStore
 import numpy as np
 import pandas as pd
 
@@ -85,7 +85,8 @@ def execute_query():
       "location": "s3://nasa-power/syn1deg/spatial/power_syn1deg_daily_spatial_utc.zarr",
       "fields": fields,
       "partitions": None,
-      "notes": None
+      "notes": "IMPORTANT: Follow the example code for creating FsspecStore and CacheStore VERY CLOSELY.",
+      "query_tempplate": query_template
     }
 
 

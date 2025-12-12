@@ -8,6 +8,17 @@ from anthropic import Anthropic
 import json
 from typing import Dict, Any, List, Tuple
 from .sources import nasa_zarr, gbif_parquet
+import pandas as pd
+
+# Pre-imported modules for safe execution environment
+import dask
+import dask.dataframe as dd # pyright: ignore[reportUnusedImport]
+from dask import array as da # pyright: ignore[reportUnusedImport]
+import s3fs # pyright: ignore[reportUnusedImport]
+import zarr # pyright: ignore[reportUnusedImport]
+from zarr.storage import FsspecStore, MemoryStore # pyright: ignore[reportUnusedImport]
+from zarr.experimental.cache_store import CacheStore # pyright: ignore[reportUnusedImport]
+import numpy as np # pyright: ignore[reportUnusedImport]
 
 class DataAgent:
     """Agent that translates natural language into data queries and executes them."""
@@ -31,7 +42,16 @@ class DataAgent:
         natural_language_query: str,
         conversation_history: List[Dict[str, Any]] | None = None
     ) -> Dict[str, Any]:
-        """Convert natural language to executable query and return results"""
+        """
+        Convert natural language to executable query and return results
+        
+        This is the only high-level method that should be called externally.
+        Internally, it calls:
+        1. _parse_intent() to understand user intent
+        2. _generate_query_code() to generate executable code
+        3. _execute_query() to run the code and get results
+        4. It also manages conversation history and logging.
+        """
 
         if conversation_history is None:
             conversation_history = []
@@ -47,15 +67,23 @@ class DataAgent:
         )
 
         code: str | None = None
-        results: str | None = None
+        results: pd.DataFrame | None = None
 
         if external_query is not None:
 
-            # Step 2: Generate executable code (not implemented here)
-            code = self._generate_query_code(external_query, conversation_history, logs)
+            # Iteratively refine and execute the query
+            for _ in range(10):  # max 10 attempts
+                previous_errors: List[Dict[str, Any]] = []
+                # Step 2: Generate executable code (not implemented here)
+                code = self._generate_query_code(external_query, conversation_history, previous_errors, logs)
 
-            # Step 3: Execute safely and return results (not implemented here)
-            results = "Query results (placeholder)"
+                # Step 3: Execute safely and return results (not implemented here)
+                results, err = self._execute_query(code, logs)
+                if err:
+                    logs.append(f"Error during query execution: {err}")
+                    previous_errors.append(err)
+                else:
+                    break  # success
 
 
         # Placeholder for code generation and execution
@@ -72,7 +100,7 @@ class DataAgent:
         self,
         query: str,
         conversation_history: List[Dict[str, Any]],
-        logs: list[str]
+        logs: list[str],
     ) -> Tuple[Dict[str, Any] | None, str | None]:
         """
         Use Claude to parse user intent
@@ -92,7 +120,7 @@ class DataAgent:
                     context_text += f"External query: {json.dumps(turn['external_query'], indent=2)}\n"
                 if turn.get("results"):
                     context_text += f"Results: {turn['results']}\n"
-        
+
         system_prompt = f"""You are an expert in environmental data analysis.
 Your task is to understand the user's query and extract the intent.
 
@@ -166,6 +194,7 @@ Return only the JSON object preceded by `EXTERNAL_QUERY`, without any additional
         self,
         external_query: Dict[str, Any],
         conversation_history: List[Dict[str, Any]],
+        previous_errors: List[Dict[str, Any]] | None,
         logs: list[str]
     ) -> str:
         """Generate Dask code from intent"""
@@ -181,11 +210,66 @@ Return only the JSON object preceded by `EXTERNAL_QUERY`, without any additional
                     context_text += f"External query: {json.dumps(turn['external_query'], indent=2)}\n"
                 if turn.get("results"):
                     context_text += f"Results: {turn['results']}\n"
-        
+        if previous_errors:
+            context_text += f"""
+One or more errors were encountered when attempting to run code generated on previous attempts at this query.
+Ensure that you address these errors when re-generating the query code.
+
+Previous errors during execution with generated code (from earliest to most recent attempt): {json.dumps(previous_errors, indent=2)}
+"""
 
         system_prompt = """You are a Python data science expert.
 Given a structured external query intent, generate safe, efficient
 Python code using Dask to execute the query.
+
+IMPORTANT: Do NOT include import statements. The following modules are already available:
+- dask (with dask.config)
+- dask.dataframe as dd
+- dask.array as da
+- pandas as pd
+- s3fs
+- zarr
+- zarr.storage.FsspecStore as FsspecStore
+- zarr.experimental.cache_store.CacheStore as CacheStore
+- numpy as np
+
+The safe globals you will have available are:
+        safe_globals: Dict[str, Any] = {
+            "pd": pd,
+            "np": np,
+            "dask": dask,
+            "dd": dd,
+            "da": da,
+            "s3fs": s3fs,
+            "zarr": zarr,
+            "FsspecStore": FsspecStore,
+            "MemoryStore": MemoryStore,
+            "CacheStore": CacheStore,
+            "__builtins__": {
+                "print": print,
+                "len": len,
+                "range": range,
+                "min": min,
+                "max": max,
+                "sum": sum,
+                "abs": abs,
+                "range": range,
+                "str": str,
+                "int": int,
+                "float": float,
+                "list": list,
+                "dict": dict,
+                "set": set,
+                "tuple": tuple,
+            }
+        }
+
+Your code must define a function named `execute_query()`:
+```python
+def execute_query() -> pd.DataFrame:
+    # Your Dask code here
+    return result_df
+```
 
 Return ONLY the code, without any additional text.
 """
@@ -219,4 +303,62 @@ processing.
 
         logs.append("Generated query code.")
         return code
-    
+
+
+    def _execute_query(self, code: str, logs: list[str]) -> Tuple[pd.DataFrame | None, Dict[str, Any] | None]:
+        """Execute generated code safely and return results"""
+
+        # WARNING: Executing arbitrary code can be dangerous.
+        # In production, use a secure sandboxed environment.
+        
+        # Create safe execution environment
+        safe_globals: Dict[str, Any] = {
+            "pd": pd,
+            "np": np,
+            "dask": dask,
+            "dd": dd,
+            "da": da,
+            "s3fs": s3fs,
+            "zarr": zarr,
+            "FsspecStore": FsspecStore,
+            "MemoryStore": MemoryStore,
+            "CacheStore": CacheStore,
+            "__builtins__": {
+                "print": print,
+                "len": len,
+                "range": range,
+                "min": min,
+                "max": max,
+                "sum": sum,
+                "abs": abs,
+                "range": range,
+                "str": str,
+                "int": int,
+                "float": float,
+                "list": list,
+                "dict": dict,
+                "set": set,
+                "tuple": tuple,
+            }
+        }
+
+        local_vars: Dict[str, Any] = {}
+
+        try:
+            exec(code, safe_globals, local_vars)
+            if "execute_query" not in local_vars:
+                return None, "No execute_query function defined in generated code."
+
+            result = local_vars["execute_query"]()
+            logs.append("Executed query code successfully.")
+
+            # Compute Dask DataFrame if needed
+            if hasattr(result, "compute"):
+                logs.append("Computing Dask DataFrame result.")
+                result = result.compute()
+
+            return result, None
+        
+        except Exception as e:
+            return None, {"error": str(e), "code": code}
+        

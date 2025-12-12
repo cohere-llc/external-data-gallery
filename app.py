@@ -1,5 +1,6 @@
 import streamlit as st
 from external_data_gallery.agent import DataAgent
+import pandas as pd
 
 st.set_page_config(page_title="Environmental Data Assistant", layout="wide")
 
@@ -40,7 +41,21 @@ for msg in st.session_state.messages:
                 with st.expander("💻 Generated Code"):
                     st.code(msg["content"]["code"], language="python")
 
-            if "results" in msg["content"] and msg["content"]["results"]:
+            if "results" in msg["content"] and msg["content"]["results"] is not None:
+                results = msg["content"]["results"]
+
+                # Display dataframe results
+                if isinstance(results, pd.DataFrame) and not results.empty:
+                    st.subheader("📊 Query Results")
+                    st.dataframe(results, use_container_width=True)
+
+                    csv = results.to_csv(index=False)
+                    st.download_button(
+                        "Download Results as CSV",
+                        csv,
+                        "query_results.csv",
+                        "text/csv"
+                    )
                 with st.expander("📊 Query Results"):
                     st.write(msg["content"]["results"])
 
@@ -56,12 +71,11 @@ if prompt := st.chat_input():
         st.info("Please enter your Anthropic API key in the sidebar to proceed.")
         st.stop()
 
-    agent = DataAgent(api_key=anthropic_api_key)
-
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
 
     with st.spinner("Thinking ...    (not really, but let's pretend)"):
+        agent = DataAgent(api_key=anthropic_api_key)
         response = agent.query(
             natural_language_query=prompt,
             conversation_history=st.session_state.query_context
