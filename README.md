@@ -15,3 +15,19 @@ In `examples/` are complete scripts used for specific research applications that
 
 In `notebooks/` are simplified scripts in Jupyter notebooks intended to demonstrate how to interact with one data provider, protocol, or file format. Click the `binder` badge above to try them out in an interactive Jupyter environment. (Valid credentials may be required for some data providers.)
 
+## Agent
+
+Also included is a prototype AI Agent for querying external datasets. To use the agent, you must have `uv` and `python3` installed locally. To clone the repo and run the agent:
+
+```
+git clone https://github.com/cohere-llc/external-data-gallery.git
+cd external-data-gallery
+uv sync
+uv run streamlit run app.py
+```
+
+You should be redirected to a browser window where you can interact with the agent. You will need to have a Google
+Claude account (see: https://console.anthropic.com/). Once you have an account, you will need to create an API key (https://console.anthropic.com/settings/keys) that you will use to power the agent. Keep an eye on your token usage!
+The agent can burn through your tokens pretty quickly.
+
+Once your finished, use `Ctrl-C` in the terminal window to shut down the streamlit service.
