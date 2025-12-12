@@ -144,7 +144,7 @@ class DataAgent:
                     context_text += f"Agent responded: {turn['response']}\n"
                 if turn.get("external_query"):
                     context_text += f"External query: {json.dumps(turn['external_query'], indent=2)}\n"
-                if turn.get("results"):
+                if turn.get("results") is not None:
                     context_text += f"Results: {turn['results']}\n"
 
         system_prompt = f"""You are an expert in environmental data analysis.
@@ -235,7 +235,7 @@ Return only the JSON object preceded by `EXTERNAL_QUERY`, without any additional
                     context_text += f"Agent responded: {turn['response']}\n"
                 if turn.get("external_query"):
                     context_text += f"External query: {json.dumps(turn['external_query'], indent=2)}\n"
-                if turn.get("results"):
+                if turn.get("results") is not None:
                     context_text += f"Results: {turn['results']}\n"
         if previous_errors is not None and len(previous_errors) > 0:
             context_text += f"""
@@ -266,6 +266,12 @@ IMPORTANT: Do NOT include import statements. The following modules are already a
 - zarr.storage.FsspecStore as FsspecStore
 - zarr.experimental.cache_store.CacheStore as CacheStore
 - numpy as np
+
+DO NOT INCLUDE ANY LINES SIMILAR TO THESE:
+- from foo import Bar
+- import baz
+
+The word "import" MUST NOT APPEAR IN YOUR CODE
 
 The safe globals you will have available are:
         safe_globals: Dict[str, Any] = {
@@ -305,6 +311,8 @@ The safe globals you will have available are:
             }
         }
 
+Do not use print statements to debug because you will no way to view them.
+        
 Your code must define a function named `execute_query()`:
 ```python
 def execute_query() -> pd.DataFrame:
@@ -328,6 +336,72 @@ as a pandas or Dask DataFrame.
 Remember that each sub-query may involve different data sources,
 and that datasets may be large and require caching and efficient parallel
 processing.
+
+IMPORTANT: Do NOT include import statements. The following modules are already available:
+- dask (with dask.config)
+- dask.dataframe as dd
+- dask.array as da
+- pandas as pd
+- s3fs
+- zarr
+- zarr.storage.FsspecStore as FsspecStore
+- zarr.experimental.cache_store.CacheStore as CacheStore
+- numpy as np
+
+DO NOT INCLUDE ANY LINES SIMILAR TO THESE:
+- from foo import Bar
+- import baz
+
+The word "import" MUST NOT APPEAR IN YOUR CODE
+
+The safe globals you will have available are:
+        safe_globals: Dict[str, Any] = {{
+            "pd": pd,
+            "np": np,
+            "dask": dask,
+            "dd": dd,
+            "da": da,
+            "s3fs": s3fs,
+            "zarr": zarr,
+            "FsspecStore": FsspecStore,
+            "MemoryStore": MemoryStore,
+            "CacheStore": CacheStore,
+            "__builtins__": {{
+                "print": print,
+                "len": len,
+                "range": range,
+                "min": min,
+                "max": max,
+                "sum": sum,
+                "abs": abs,
+                "str": str,
+                "int": int,
+                "float": float,
+                "list": list,
+                "dict": dict,
+                "set": set,
+                "tuple": tuple,
+                "any": any,
+                "all": all,
+                "enumerate": enumerate,
+                "sorted": sorted,
+                "isinstance": isinstance,
+                "hasattr": hasattr,
+                "getattr": getattr,
+                "type": type,                
+            }}
+        }}
+
+Do not use print statements to debug because you will no way to view them.
+        
+Your code must define a function named `execute_query()`:
+```python
+def execute_query() -> pd.DataFrame:
+    # Your Dask code here
+    return result_df
+```
+
+Return ONLY the code, without any additional text.
 """
         response = self.client.messages.create(
             model="claude-sonnet-4-20250514",

@@ -11,7 +11,7 @@ def schema() -> Dict[str, Any]:
     """Returns the schema for the NASA Zarr dataset."""
     
     store = FsspecStore.from_url(
-        "s3://nasa-power/syn1deg/spatial/power_syn1deg_daily_spatial_utc.zarr",
+        "s3://nasa-power/merra2/spatial/power_merra2_daily_spatial_utc.zarr",
         read_only=True,
         storage_options={"anon": True}
     )
@@ -78,11 +78,11 @@ def execute_query():
 
 
     return {
-      "name": "NASA POWER Synoptic 1-Degree Daily Data",
-      "description": "A dataset containing daily synoptic data from NASA's Prediction of Worldwide Energy Resources (POWER) project in Zarr format.",
+      "name": "NASA POWER Modern-Era Retrospective analysis for Research and Applications, Version 2 (MERRA-2) ",
+      "description": "A dataset containing MERRA-2 data from NASA's Prediction of Worldwide Energy Resources (POWER) project in Zarr format.",
       "format": "zarr",
       "source type": "aws s3",
-      "location": "s3://nasa-power/syn1deg/spatial/power_syn1deg_daily_spatial_utc.zarr",
+      "location": "s3://nasa-power/merra2/spatial/power_merra2_daily_spatial_utc.zarr",
       "fields": fields,
       "partitions": None,
       "notes": "IMPORTANT: Follow the example code for creating FsspecStore and CacheStore VERY CLOSELY.",

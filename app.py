@@ -27,7 +27,7 @@ if "messages" not in st.session_state:
 if "query_context" not in st.session_state:
     st.session_state.query_context = []
 
-for msg in st.session_state.messages:
+for idx, msg in enumerate(st.session_state.messages):
     with st.chat_message(msg["role"]):
         if isinstance(msg["content"], dict):
             if "response" in msg["content"] and msg["content"]["response"]:
@@ -54,7 +54,8 @@ for msg in st.session_state.messages:
                         "Download Results as CSV",
                         csv,
                         "query_results.csv",
-                        "text/csv"
+                        "text/csv",
+                        key=f"download_csv_{idx}"
                     )
                 else:
                     with st.expander("📊 Query Results"):
@@ -87,7 +88,7 @@ if prompt := st.chat_input():
         "response": response.get("response", ""),
         "external_query": response.get("external_query", {}),
         "code": response.get("code", ""),
-        "results": response.get("results", ""),
+        "results": response.get("results"),
         "logs": response.get("logs", [])
     })
 
