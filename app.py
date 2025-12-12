@@ -21,7 +21,7 @@ st.caption("💬 Ask questions about environmental data in natural language")
 
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! How can I assist you with environmental data today?"}
+        {"role": "assistant", "content": "Hello! How can I assist you today?"}
     ]
 
 if "query_context" not in st.session_state:
@@ -56,8 +56,9 @@ for msg in st.session_state.messages:
                         "query_results.csv",
                         "text/csv"
                     )
-                with st.expander("📊 Query Results"):
-                    st.write(msg["content"]["results"])
+                else:
+                    with st.expander("📊 Query Results"):
+                        st.write(msg["content"]["results"])
 
             if "logs" in msg["content"] and msg["content"]["logs"]:
                 with st.expander("📝 Logs"):

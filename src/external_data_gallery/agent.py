@@ -50,6 +50,7 @@ class DataAgent:
         1. _parse_intent() to understand user intent
         2. _generate_query_code() to generate executable code
         3. _execute_query() to run the code and get results
+        4. _summarize() is run to provide a plain language summary of the whole process
         4. It also manages conversation history and logging.
         """
 
@@ -68,22 +69,47 @@ class DataAgent:
 
         code: str | None = None
         results: pd.DataFrame | None = None
+        previous_errors: List[Dict[str, Any]] = []
+        previous_analyses: List[str] = []
 
         if external_query is not None:
 
             # Iteratively refine and execute the query
-            for _ in range(10):  # max 10 attempts
-                previous_errors: List[Dict[str, Any]] = []
+            max_retries = 3
+            for i in range(max_retries):
+
                 # Step 2: Generate executable code (not implemented here)
-                code = self._generate_query_code(external_query, conversation_history, previous_errors, logs)
+                code = self._generate_query_code(
+                    external_query,
+                    conversation_history,
+                    previous_errors,
+                    previous_analyses,
+                    logs
+                )
 
                 # Step 3: Execute safely and return results (not implemented here)
                 results, err = self._execute_query(code, logs)
                 if err:
                     logs.append(f"Error during query execution: {err}")
                     previous_errors.append(err)
+                    continue
+
+                response, do_retry = self._summarize(
+                    natural_language_query,
+                    conversation_history,
+                    external_query,
+                    code,
+                    results,
+                    logs,
+                    previous_errors,
+                    i < max_retries - 1
+                )
+                previous_analyses.append(response)
+                if not do_retry:
+                    logs.append(f"Query completed successfully after {i + 1} attempts.")
+                    break
                 else:
-                    break  # success
+                    logs.append(f"Query executed, but results look problematic. Retrying")
 
 
         # Placeholder for code generation and execution
@@ -195,6 +221,7 @@ Return only the JSON object preceded by `EXTERNAL_QUERY`, without any additional
         external_query: Dict[str, Any],
         conversation_history: List[Dict[str, Any]],
         previous_errors: List[Dict[str, Any]] | None,
+        previous_analyses: List[str] | None,
         logs: list[str]
     ) -> str:
         """Generate Dask code from intent"""
@@ -210,12 +237,19 @@ Return only the JSON object preceded by `EXTERNAL_QUERY`, without any additional
                     context_text += f"External query: {json.dumps(turn['external_query'], indent=2)}\n"
                 if turn.get("results"):
                     context_text += f"Results: {turn['results']}\n"
-        if previous_errors:
+        if previous_errors is not None and len(previous_errors) > 0:
             context_text += f"""
 One or more errors were encountered when attempting to run code generated on previous attempts at this query.
 Ensure that you address these errors when re-generating the query code.
 
 Previous errors during execution with generated code (from earliest to most recent attempt): {json.dumps(previous_errors, indent=2)}
+"""
+        if previous_analyses is not None and len(previous_analyses) > 0:
+            context_text += f"""
+One or more analyses of the results determined that the query code should be regenerated. Ensure you
+address these issues when re-generating the query code.
+
+Previous analyses (from earliest to most recent): {json.dumps(previous_analyses, indent=2)}
 """
 
         system_prompt = """You are a Python data science expert.
@@ -253,7 +287,6 @@ The safe globals you will have available are:
                 "max": max,
                 "sum": sum,
                 "abs": abs,
-                "range": range,
                 "str": str,
                 "int": int,
                 "float": float,
@@ -261,6 +294,14 @@ The safe globals you will have available are:
                 "dict": dict,
                 "set": set,
                 "tuple": tuple,
+                "any": any,
+                "all": all,
+                "enumerate": enumerate,
+                "sorted": sorted,
+                "isinstance": isinstance,
+                "hasattr": hasattr,
+                "getattr": getattr,
+                "type": type,                
             }
         }
 
@@ -331,7 +372,6 @@ processing.
                 "max": max,
                 "sum": sum,
                 "abs": abs,
-                "range": range,
                 "str": str,
                 "int": int,
                 "float": float,
@@ -339,6 +379,14 @@ processing.
                 "dict": dict,
                 "set": set,
                 "tuple": tuple,
+                "any": any,
+                "all": all,
+                "enumerate": enumerate,
+                "sorted": sorted,
+                "isinstance": isinstance,
+                "hasattr": hasattr,
+                "getattr": getattr,
+                "type": type,                
             }
         }
 
@@ -362,3 +410,78 @@ processing.
         except Exception as e:
             return None, {"error": str(e), "code": code}
         
+    def _summarize(
+        self,
+        natural_language_query: str,
+        conversation_history: List[Dict[str, Any]],
+        external_query: Dict[str, Any] | None,
+        code: str | None,
+        results: pd.DataFrame | None,
+        logs: List[str],
+        previous_errors: List[Dict[str, Any]],
+        retry_if_needed: bool
+    ) -> str:
+        """
+        Generate a plain language summary of the attempt at figuring out a query request
+        """
+
+        system_prompt = f"""You are the supervisor of the team of AI agents that
+respond to requests involving external environmental data queries
+"""
+        
+        retry_text = """
+Do NOT include "RETRY_QUERY" in the response.
+
+"""
+        if retry_if_needed:
+            retry_text = """
+If you think there was a problem with the queries, include a
+recommendation for how to fix them and include "RETRY_QUERY" in the response.
+
+"""
+        query = f"""Please summarize the process and results from your team's
+attempt to respond to this request: {natural_language_query}
+
+Generate a plain-language summary of how things have gone.
+
+{retry_text}
+
+The summary should include:
+- The original request
+- A high-level overview of what data sources were queried and how
+- Any errors encountered
+- An overview of the results (if determined)
+- Recommendations for next steps (if warranted)
+
+
+
+Here is the audit trail:
+
+External queries: {external_query}
+
+Generated code: {code}
+
+Results: {results}
+
+Logs: {logs}
+
+Query errors encountered along the way: {previous_errors}
+
+Conversation history: {conversation_history}
+"""
+
+        response = self.client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            system=system_prompt,
+            messages=[
+                {"role": "user", "content": query}
+            ]
+        )
+
+        full_text = response.content[0].text
+
+        if "RETRY_QUERY" in full_text and retry_if_needed:
+            return full_text, True
+
+        return full_text, False
