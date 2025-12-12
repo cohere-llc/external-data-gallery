@@ -31,3 +31,55 @@ Claude account (see: https://console.anthropic.com/). Once you have an account, 
 The agent can burn through your tokens pretty quickly.
 
 Once your finished, use `Ctrl-C` in the terminal window to shut down the streamlit service.
+
+### How It Works
+
+The agent uses a multi-step workflow powered by Claude Sonnet 4.5:
+
+```mermaid
+graph TD
+    A[User Query] --> B[Intent Parser]
+    B --> C{External Data<br/>Needed?}
+    C -->|No| D[Direct Response]
+    C -->|Yes| E[Extract Query Intent]
+    E --> F[Generate Python Code]
+    F --> G[Execute Code Safely]
+    G --> H{Execution<br/>Success?}
+    H -->|Error| I[Add to Error Context]
+    I --> F
+    H -->|Success| J[Supervisor Analysis]
+    J --> K{Results<br/>Satisfactory?}
+    K -->|No| L[Add to Analysis Context]
+    L --> F
+    K -->|Yes| M[Final Response]
+    D --> N[Display to User]
+    M --> N
+    
+    style A fill:#e1f5fe
+    style N fill:#c8e6c9
+    style H fill:#fff9c4
+    style K fill:#fff9c4
+```
+
+**Workflow Steps:**
+
+1. **Intent Parsing** - Claude analyzes the natural language query to determine if external data is needed
+2. **Query Planning** - If needed, breaks down the request into structured sub-queries with data sources, filters, and aggregations
+3. **Code Generation** - Generates Python code using Dask, Zarr, and other libraries to execute the query
+4. **Safe Execution** - Runs the generated code in a sandboxed environment with restricted imports
+5. **Supervisor Review** - Claude reviews the results to verify they answer the original question
+6. **Iterative Refinement** - If errors occur or results are unsatisfactory, the agent retries with context (up to 10 attempts)
+7. **Response** - Returns the final results with code, logs, and visualizations
+
+**Currently Supported Data Sources:**
+- **NASA POWER** - Global weather and solar data
+- **GBIF** - Global biodiversity occurrence records
+
+### Example Queries
+
+Try asking:
+- "What was the average annual temperature in Los Angeles from 2010 to 2019?"
+- "How many observations of polar bears are recorded in GBIF?"
+- "Show me temperature data for New York City in January 2020"
+
+NOTE: GBIF is huge and there the queries generated are often not optimized. It might run forever and try to download many GB of data.
