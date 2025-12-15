@@ -86,7 +86,7 @@ def execute_query():
       "fields": fields,
       "partitions": None,
       "notes": "IMPORTANT: Follow the example code for creating FsspecStore and CacheStore VERY CLOSELY.",
-      "query_tempplate": query_template
+      "query_template": query_template
     }
 
 

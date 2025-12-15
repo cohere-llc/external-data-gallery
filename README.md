@@ -26,11 +26,11 @@ uv sync
 uv run streamlit run app.py
 ```
 
-You should be redirected to a browser window where you can interact with the agent. You will need to have a Google
+You should be redirected to a browser window where you can interact with the agent. You will need to have an Anthropic
 Claude account (see: https://console.anthropic.com/). Once you have an account, you will need to create an API key (https://console.anthropic.com/settings/keys) that you will use to power the agent. Keep an eye on your token usage!
 The agent can burn through your tokens pretty quickly.
 
-Once your finished, use `Ctrl-C` in the terminal window to shut down the streamlit service.
+Once you're finished, use `Ctrl-C` in the terminal window to shut down the streamlit service.
 
 ### How It Works
 

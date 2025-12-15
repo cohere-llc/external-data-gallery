@@ -213,7 +213,7 @@ Return only the JSON object preceded by `EXTERNAL_QUERY`, without any additional
             logs.append(f"Extracted text: {json_str}")
             return None, None
 
-        logs.append("Determined response with "f"{len(external_query.get('sub_queries', []))} sub-queries")
+        logs.append(f"Determined response with {len(external_query.get('sub_queries', []))} sub-queries")
         return external_query, None
     
     def _generate_query_code(
@@ -469,7 +469,7 @@ Return ONLY the code, without any additional text.
         try:
             exec(code, safe_globals, local_vars)
             if "execute_query" not in local_vars:
-                return None, "No execute_query function defined in generated code."
+                return None, {"error": "No execute_query function defined in generated code.", "code": code}
 
             result = local_vars["execute_query"]()
             logs.append("Executed query code successfully.")
@@ -494,7 +494,7 @@ Return ONLY the code, without any additional text.
         logs: List[str],
         previous_errors: List[Dict[str, Any]],
         retry_if_needed: bool
-    ) -> str:
+    ) -> Tuple[str, bool]:
         """
         Generate a plain language summary of the attempt at figuring out a query request
         """
