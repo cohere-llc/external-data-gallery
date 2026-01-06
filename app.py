@@ -76,12 +76,20 @@ if prompt := st.chat_input():
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.chat_message("user").markdown(prompt)
 
-    with st.spinner("Thinking ...    (not really, but let's pretend)"):
+    with st.status("Processing your request...", expanded=False) as status:
         agent = DataAgent(api_key=anthropic_api_key)
+
+        # Status update callback
+        def update_status(message: str):
+            status.update(label=f"{message}")
+
         response = agent.query(
             natural_language_query=prompt,
-            conversation_history=st.session_state.query_context
+            conversation_history=st.session_state.query_context,
+            status_callback=update_status
         )
+
+        status.update(label="✅ Processing complete!", state="complete")
 
     st.session_state.query_context.append({
         "query": prompt,

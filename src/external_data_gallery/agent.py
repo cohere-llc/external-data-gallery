@@ -6,7 +6,7 @@ Attempts to query external data sources to answer researcher's questions.
 import re
 from anthropic import Anthropic
 import json
-from typing import Dict, Any, List, Tuple
+from typing import Callable, Dict, Any, List, Tuple
 from .sources import nasa_zarr, gbif_parquet, gbif_pygbif
 import pandas as pd
 
@@ -42,10 +42,16 @@ class DataAgent:
     def query(
         self,
         natural_language_query: str,
-        conversation_history: List[Dict[str, Any]] | None = None
+        conversation_history: List[Dict[str, Any]] | None = None,
+        status_callback: Callable[[str], None] | None = None
     ) -> Dict[str, Any]:
         """
         Convert natural language to executable query and return results
+
+        Args:
+            natural_language_query: The user's query in natural language
+            conversation_history: Previous conversation history for context
+            status_callback: Optional callback function to report status updates
         
         This is the only high-level method that should be called externally.
         Internally, it calls:
@@ -66,7 +72,7 @@ class DataAgent:
         external_query, response = self._parse_intent(
             natural_language_query,
             conversation_history,
-            logs
+            logs,
         )
 
         code: str | None = None
@@ -80,7 +86,9 @@ class DataAgent:
             max_retries = 3
             for i in range(max_retries):
 
-                # Step 2: Generate executable code (not implemented here)
+                # Step 2: Generate executable code
+                if status_callback:
+                    status_callback(f"📝 Generating query code (attempt {i + 1} of {max_retries})...")
                 code = self._generate_query_code(
                     external_query,
                     conversation_history,
@@ -89,13 +97,18 @@ class DataAgent:
                     logs
                 )
 
-                # Step 3: Execute safely and return results (not implemented here)
+                # Step 3: Execute safely and return results
+                if status_callback:
+                    status_callback(f"⚡️ Executing query code (attempt {i + 1} of {max_retries})...")
                 results, err = self._execute_query(code, logs)
                 if err:
                     logs.append(f"Error during query execution: {err}")
                     previous_errors.append(err)
                     continue
 
+                # Step 4: Summarize and determine if retry is needed
+                if status_callback:
+                    status_callback(f"🔍 Assessing results for attempt {i + 1} of {max_retries}...")
                 response, do_retry = self._summarize(
                     natural_language_query,
                     conversation_history,
