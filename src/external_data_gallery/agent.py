@@ -7,7 +7,7 @@ import re
 from anthropic import Anthropic
 import json
 from typing import Dict, Any, List, Tuple
-from .sources import nasa_zarr, gbif_parquet
+from .sources import nasa_zarr, gbif_parquet, gbif_pygbif
 import pandas as pd
 
 # Pre-imported modules for safe execution environment
@@ -19,6 +19,7 @@ import zarr # pyright: ignore[reportUnusedImport]
 from zarr.storage import FsspecStore, MemoryStore # pyright: ignore[reportUnusedImport]
 from zarr.experimental.cache_store import CacheStore # pyright: ignore[reportUnusedImport]
 import numpy as np # pyright: ignore[reportUnusedImport]
+import pygbif # pyright: ignore[reportUnusedImport]
 
 class DataAgent:
     """Agent that translates natural language into data queries and executes them."""
@@ -32,6 +33,7 @@ class DataAgent:
         return {
             "nasa_zarr": nasa_zarr.schema(),
             "gbif_parquet": gbif_parquet.schema(),
+            "gbif_pygbif": gbif_pygbif.schema(),
         }
     
     def __repr__(self) -> str:
@@ -266,6 +268,7 @@ IMPORTANT: Do NOT include import statements. The following modules are already a
 - zarr.storage.FsspecStore as FsspecStore
 - zarr.experimental.cache_store.CacheStore as CacheStore
 - numpy as np
+- pygbif
 
 DO NOT INCLUDE ANY LINES SIMILAR TO THESE:
 - from foo import Bar
@@ -282,6 +285,7 @@ The safe globals you will have available are:
             "da": da,
             "s3fs": s3fs,
             "zarr": zarr,
+            "pygbif": pygbif,
             "FsspecStore": FsspecStore,
             "MemoryStore": MemoryStore,
             "CacheStore": CacheStore,
@@ -337,6 +341,8 @@ Remember that each sub-query may involve different data sources,
 and that datasets may be large and require caching and efficient parallel
 processing.
 
+Always prefer pygbif over direct Parquet access for GBIF data.
+
 IMPORTANT: Do NOT include import statements. The following modules are already available:
 - dask (with dask.config)
 - dask.dataframe as dd
@@ -347,6 +353,7 @@ IMPORTANT: Do NOT include import statements. The following modules are already a
 - zarr.storage.FsspecStore as FsspecStore
 - zarr.experimental.cache_store.CacheStore as CacheStore
 - numpy as np
+- pygbif
 
 DO NOT INCLUDE ANY LINES SIMILAR TO THESE:
 - from foo import Bar
@@ -363,6 +370,7 @@ The safe globals you will have available are:
             "da": da,
             "s3fs": s3fs,
             "zarr": zarr,
+            "pygbif": pygbif,
             "FsspecStore": FsspecStore,
             "MemoryStore": MemoryStore,
             "CacheStore": CacheStore,
@@ -435,6 +443,7 @@ Return ONLY the code, without any additional text.
             "da": da,
             "s3fs": s3fs,
             "zarr": zarr,
+            "pygbif": pygbif,
             "FsspecStore": FsspecStore,
             "MemoryStore": MemoryStore,
             "CacheStore": CacheStore,
@@ -511,6 +520,9 @@ Do NOT include "RETRY_QUERY" in the response.
             retry_text = """
 If you think there was a problem with the queries, include a
 recommendation for how to fix them and include "RETRY_QUERY" in the response.
+
+In particular, make sure that if limits are used in queries, the results
+are checked for completeness, and re-queried until completeness is achieved.
 
 """
         query = f"""Please summarize the process and results from your team's
