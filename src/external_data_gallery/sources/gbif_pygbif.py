@@ -53,7 +53,7 @@ def schema() -> Dict[str, Any]:
         "occurrence.typeStatus": "[str] Type status of the specimen. One of many options. See ?typestatus",
         "occurrence.recordNumber": "[int] Number recorded by collector of the data, different from GBIF record number. See http://rs.tdwg.org/dwc/terms/#recordNumber} for more info",
         "occurrence.lastInterpreted": "[date] Date the record was last modified in GBIF, in ISO 8601 format: yyyy, yyyy-MM, yyyy-MM-dd, or MM-dd. Supports range queries, smaller,larger (e.g., 1990,1991, whereas 1991,1990 wouldn’t work)",
-        "occurrence.continent": "[str] Continent. One of africa, antarctica, asia, europe, north_america (North America includes the Caribbean and reachies down and includes Panama), oceania, or south_america",
+        "occurrence.continent": "[str] Continent. One of africa, antarctica, asia, europe, north_america (North America includes the Caribbean and reaches down and includes Panama), oceania, or south_america",
         "occurrence.fields": "[str] Default (all) returns all fields. minimal returns just taxon name, key, latitude, and longitude. Or specify each field you want returned by name, e.g. fields = ['name','latitude','elevation'].",
         "occurrence.mediatype": "[str] Media type. Default is NULL, so no filtering on mediatype. Options: NULL, MovingImage, Sound, and StillImage",
         "occurrence.limit": "[int] Number of results to return. Default: 300",
