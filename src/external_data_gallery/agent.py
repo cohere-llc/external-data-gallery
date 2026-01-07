@@ -6,8 +6,8 @@ Attempts to query external data sources to answer researcher's questions.
 import re
 from anthropic import Anthropic
 import json
-from typing import Dict, Any, List, Tuple
-from .sources import nasa_zarr, gbif_parquet
+from typing import Callable, Dict, Any, List, Tuple
+from .sources import nasa_zarr, gbif_parquet, gbif_pygbif
 import pandas as pd
 
 # Pre-imported modules for safe execution environment
@@ -19,6 +19,7 @@ import zarr # pyright: ignore[reportUnusedImport]
 from zarr.storage import FsspecStore, MemoryStore # pyright: ignore[reportUnusedImport]
 from zarr.experimental.cache_store import CacheStore # pyright: ignore[reportUnusedImport]
 import numpy as np # pyright: ignore[reportUnusedImport]
+import pygbif # pyright: ignore[reportUnusedImport]
 
 class DataAgent:
     """Agent that translates natural language into data queries and executes them."""
@@ -32,6 +33,7 @@ class DataAgent:
         return {
             "nasa_zarr": nasa_zarr.schema(),
             "gbif_parquet": gbif_parquet.schema(),
+            "gbif_pygbif": gbif_pygbif.schema(),
         }
     
     def __repr__(self) -> str:
@@ -40,10 +42,16 @@ class DataAgent:
     def query(
         self,
         natural_language_query: str,
-        conversation_history: List[Dict[str, Any]] | None = None
+        conversation_history: List[Dict[str, Any]] | None = None,
+        status_callback: Callable[[str], None] | None = None
     ) -> Dict[str, Any]:
         """
         Convert natural language to executable query and return results
+
+        Args:
+            natural_language_query: The user's query in natural language
+            conversation_history: Previous conversation history for context
+            status_callback: Optional callback function to report status updates
         
         This is the only high-level method that should be called externally.
         Internally, it calls:
@@ -64,7 +72,7 @@ class DataAgent:
         external_query, response = self._parse_intent(
             natural_language_query,
             conversation_history,
-            logs
+            logs,
         )
 
         code: str | None = None
@@ -78,7 +86,9 @@ class DataAgent:
             max_retries = 3
             for i in range(max_retries):
 
-                # Step 2: Generate executable code (not implemented here)
+                # Step 2: Generate executable code
+                if status_callback:
+                    status_callback(f"📝 Generating query code (attempt {i + 1} of {max_retries})...")
                 code = self._generate_query_code(
                     external_query,
                     conversation_history,
@@ -87,13 +97,18 @@ class DataAgent:
                     logs
                 )
 
-                # Step 3: Execute safely and return results (not implemented here)
+                # Step 3: Execute safely and return results
+                if status_callback:
+                    status_callback(f"⚡️ Executing query code (attempt {i + 1} of {max_retries})...")
                 results, err = self._execute_query(code, logs)
                 if err:
                     logs.append(f"Error during query execution: {err}")
                     previous_errors.append(err)
                     continue
 
+                # Step 4: Summarize and determine if retry is needed
+                if status_callback:
+                    status_callback(f"🔍 Assessing results for attempt {i + 1} of {max_retries}...")
                 response, do_retry = self._summarize(
                     natural_language_query,
                     conversation_history,
@@ -266,6 +281,7 @@ IMPORTANT: Do NOT include import statements. The following modules are already a
 - zarr.storage.FsspecStore as FsspecStore
 - zarr.experimental.cache_store.CacheStore as CacheStore
 - numpy as np
+- pygbif
 
 DO NOT INCLUDE ANY LINES SIMILAR TO THESE:
 - from foo import Bar
@@ -282,6 +298,7 @@ The safe globals you will have available are:
             "da": da,
             "s3fs": s3fs,
             "zarr": zarr,
+            "pygbif": pygbif,
             "FsspecStore": FsspecStore,
             "MemoryStore": MemoryStore,
             "CacheStore": CacheStore,
@@ -337,6 +354,8 @@ Remember that each sub-query may involve different data sources,
 and that datasets may be large and require caching and efficient parallel
 processing.
 
+Always prefer pygbif over direct Parquet access for GBIF data.
+
 IMPORTANT: Do NOT include import statements. The following modules are already available:
 - dask (with dask.config)
 - dask.dataframe as dd
@@ -347,6 +366,7 @@ IMPORTANT: Do NOT include import statements. The following modules are already a
 - zarr.storage.FsspecStore as FsspecStore
 - zarr.experimental.cache_store.CacheStore as CacheStore
 - numpy as np
+- pygbif
 
 DO NOT INCLUDE ANY LINES SIMILAR TO THESE:
 - from foo import Bar
@@ -363,6 +383,7 @@ The safe globals you will have available are:
             "da": da,
             "s3fs": s3fs,
             "zarr": zarr,
+            "pygbif": pygbif,
             "FsspecStore": FsspecStore,
             "MemoryStore": MemoryStore,
             "CacheStore": CacheStore,
@@ -435,6 +456,7 @@ Return ONLY the code, without any additional text.
             "da": da,
             "s3fs": s3fs,
             "zarr": zarr,
+            "pygbif": pygbif,
             "FsspecStore": FsspecStore,
             "MemoryStore": MemoryStore,
             "CacheStore": CacheStore,
@@ -511,6 +533,9 @@ Do NOT include "RETRY_QUERY" in the response.
             retry_text = """
 If you think there was a problem with the queries, include a
 recommendation for how to fix them and include "RETRY_QUERY" in the response.
+
+In particular, make sure that if limits are used in queries, the results
+are checked for completeness, and re-queried until completeness is achieved.
 
 """
         query = f"""Please summarize the process and results from your team's
