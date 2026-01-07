@@ -309,7 +309,7 @@ x['facets']['basisOfRecord']
 x['facets']['basisOfRecord']['count']
 
 ## set a minimum facet count
-x = occurrences.search(facet = "country", facetMincount = 30000000L, limit = 0)
+x = occurrences.search(facet = "country", facetMincount = 30000000, limit = 0)
 x['facets']
 
 ## paging per each faceted variable
