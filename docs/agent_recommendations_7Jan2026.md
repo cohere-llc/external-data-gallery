@@ -2,7 +2,9 @@
 
 ## Summary
 
-The goal is to support user access to a variety of external scientific data sets, including via an AI agent. After a preliminary investigation, we recommend exploring an approach centered around collecting, refining, and documenting query scripts from the user community. Contributed scripts should be real-world examples of queries that were used to answer actual research questions. Curated scripts would be published as a gallery of Jupyter Notebooks that users with scripting experience could use as templates for their own research questions. The gallery would also be used to further explore development of a dedicated AI agent tasked with performing queries for any user, regardless of scripting experience. Rapid deployment and incremental improvement are key advantages to this gallery-based approach to user support.
+The goal is to support user access to a variety of external scientific data sets, including via an AI agent. We performed a preliminary investigation by creating a prototype AI agent with prompts for the NASA POWER and GBIF data sets using the Anthropic Python API. Key takeaways were that little software development was required to create this prototype agent; the quality of the example queries provided as prompts had large effects on the ability of the agent to return results; and multiple requests using the same prompt gave different results indicating robust verification of results is critical.
+
+Moving forward, we recommend exploring an approach centered around collecting, refining, and documenting query scripts from the user community. Contributed scripts should be real-world examples of queries that were used to answer actual research questions. Curated scripts would be published as a gallery of Jupyter Notebooks that users with scripting experience could use as templates for their own research questions. The gallery would also be used to further explore development of a dedicated AI agent tasked with performing queries for any user, regardless of scripting experience. Rapid deployment and incremental improvement are key advantages to this gallery-based approach to user support.
 
 We also strongly recommend against deploying any AI agent for production use in research until a robust verification of all agent responses is possible.
 
@@ -87,7 +89,7 @@ We tried asking the same question several times to see how consistent the result
 
 \* Note that no changes to the internal agent prompts were made for Attempts 1&ndash;6. For Attempt 7, units were added to the prompts describing NASA POWER data.
 
-Results for temperature, pressure, and elevation from "successful" attempts are shown below.
+Results for temperature, pressure, and elevation from "successful" attempts are shown below. (Note that some results give units of Pa for pressure and others give hPa, but all results are of the same order of magnitude.)
 
 ### Temperature (K)
 | Month | Attempt 1 | Attempt 3 | Attempt 5 | Attempt 6 | Attempt 7** |
@@ -171,12 +173,12 @@ Results for temperature, pressure, and elevation from "successful" attempts are 
 * Iteration improves chances of getting results (several of the Attempts returned results on the 2nd or 3rd iteration)
 
 ### Verification
-* Running the python scripts locally allows for follow-up verification of the methodology, but someone would have to actually do this. Someone capable of assessing the quality of the generated code may spend less time generating the scripts themselves.
+* Running the python scripts locally allows for follow-up verification of the methodology, but someone would have to actually do this. _Someone capable of assessing the quality of the generated code may spend less time generating the scripts themselves._
 * The variety in the results (with no two attempts returning identical results, and dramatic differences in several cases) indicates there are many ways to create python scripts that do actual queries of NASA and GBIF data, which look reasonable at a high-level, and return results that don't stand out as obviously wrong, but are incorrect (assuming there is one correct answer to this question).
 
 ### Prompting
 * The Claude documentation's [Prompting Best Practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-4-best-practices) suggest that prompts are model and model-version specific. What works well for one model or model version may not work as well for others.
-* The quality of the example scripts is important. Initially, the prompts for `pygbif` (which were copied directly from their documentation) contained some out-of-date information. This lead to repeated failures during attempts to query GBIF data.
+* The quality of the example scripts is important. Initially, the prompts for `pygbif` (which were copied directly from their documentation) contained some out-of-date information. This lead to repeated failures during attempts to query GBIF data. Similary, the prompts for NASA POWER did not include units for pressure and in some cases the agent assumed they were in Pa and other times used hPa (which were the correct units.)
 * Getting something to run and return results can be done quickly. Getting higher quality responses will likely involve gaining experience with:
   * Prompt caching, particularly for general-use prompts like the gallery examples
   * Behavior and management of the context window
