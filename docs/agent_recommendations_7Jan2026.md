@@ -18,7 +18,7 @@ We used the [Anthropic Python API library](https://github.com/anthropics/anthrop
 
 We arbitrarily chose the Anthropic python package to develop this prototype, but expect that similar results would be obtained using other approaches. We used the Claude Sonnet 4.5 model for the evaluation.
 
-The protoype is available in the same repository as this document. To try it out, you will need to have `git` and `uv` installed locally. Then, from a terminal run:
+The prototype is available in the same repository as this document. To try it out, you will need to have `git` and `uv` installed locally. Then, from a terminal run:
 ```
 git clone https://github.com/cohere-llc/external-data-gallery.git
 cd external-data-gallery
