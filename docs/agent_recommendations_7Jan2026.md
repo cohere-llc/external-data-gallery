@@ -176,6 +176,7 @@ Results for temperature, pressure, and elevation from "successful" attempts are 
 
 ### Prompting
 * The Claude documentation's [Prompting Best Practices](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-4-best-practices) suggest that prompts are model and model-version specific. What works well for one model or model version may not work as well for others.
+* The quality of the example scripts is important. Initially, the prompts for `pygbif` (which were copied directly from their documentation) contained some out-of-date information. This lead to repeated failures during attempts to query GBIF data.
 * Getting something to run and return results can be done quickly. Getting higher quality responses will likely involve gaining experience with:
   * Prompt caching, particularly for general-use prompts like the gallery examples
   * Behavior and management of the context window
