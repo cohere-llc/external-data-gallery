@@ -8,7 +8,7 @@ We also strongly recommend against deploying any AI agent for production use in 
 
 Users could be asked something along these lines:
 
-> We are attempting to collect examples of queries KBase users have written to answer specific research questions that involved interacting with data-providing services (e.g., via REST APIs, python packages, Google Earth Engine, AWS Data Exchange). Our goal is to develop a curated gallery of example scripts in Jupyter Notebooks that community users can refer to as they create scripts to answer their own research questions. We also plan to use the examples to train an AI agent that could assist users with these types of research questions.
+> We are attempting to collect examples of queries KBase users have written to answer specific research questions that involved interacting with data-providing services (e.g., via REST APIs, python packages, Google Earth Engine, AWS Data Exchange). Our goal is to develop a curated gallery of example scripts in Jupyter Notebooks that community users can use as recipes. We also plan to use the examples to train an AI agent that could assist users with these types of research questions.
 > 
 > If you have developed scripts like these in the past and would be willing to contribute them to this effort, please provide the script and a short description of its intent. The script can be in any language and does not have to run. KBase developers will port the original scripts to Python in a Jupyter Notebook, debugging and adding any necessary documentation in the process. Gallery examples will be released under the MIT license and you will retain the copyright on your original script.
 
@@ -26,7 +26,7 @@ uv sync
 uv run streamlit run app.py
 ```
 
-You can then interact with the agent in a browser after creating a [Claude API token](https://platform.claude.com/). (It's not free! Make sure you monitor your usage. In our tests inividual questions involving queries cost ~$0.20.)
+You can then interact with the agent in a browser after creating a [Claude API token](https://platform.claude.com/). (It's not free! Make sure you monitor your usage. In our tests individual questions involving queries cost ~$0.20.)
 
 The agent code is available in the same repository as this document.
 
@@ -39,7 +39,7 @@ The agent code is available in the same repository as this document.
 
 ### Agent Workflow
 
-The overall workflow for each request is shown below. The workflow uses a small team of agents with dedicated roles and collects output at each step, which are used in the final response to the user. Generated code is run locally. Queries are retried up to 3 times if techincal errors or problematic results are encountered.
+The overall workflow for each request is shown below. The workflow uses a small team of agents with dedicated roles and collects output at each step, which are used in the final response to the user. Generated code is run locally. Queries are retried up to 3 times if technical errors or problematic results are encountered.
 
 ```mermaid
 graph TD
@@ -83,7 +83,7 @@ We tried asking the same question several times to see how consistent the result
 | 4       | No Results. Technical errors on all 3 attempts. |
 | 5       | Returned temperature and pressure (no elevation). Technical errors on initial attempts. |
 | 6       | Returned temperature, pressure, and elevation. Technical errors on initial attempts. |
-| 7*      | Returend temperature, pressure, and elevation. Technical errors on initial attempts. |
+| 7*      | Returned temperature, pressure, and elevation. Technical errors on initial attempts. |
 
 \* Note that no changes to the internal agent prompts were made for Attempts 1&ndash;6. For Attempt 7, units were added to the prompts describing NASA POWER data.
 
@@ -155,7 +155,7 @@ Results for temperature, pressure, and elevation from "successful" attempts are 
 ## Analysis
 
 ### Things the agent was generally good at
-* Returning responses that could be interpretted as generally understanding the question and creating a reasonable plan for using the NASA POWER and GBIF datasets to form an answer.
+* Returning responses that could be interpreted as generally understanding the question and creating a reasonable plan for using the NASA POWER and GBIF datasets to form an answer.
 * Responding to internal API calls in such a way that the app could run the generated python code and fill in the response template (Summary / JSON query description / Generated Code / Results)
 
 ### Things the agent was generally bad at
@@ -171,7 +171,7 @@ Results for temperature, pressure, and elevation from "successful" attempts are 
 * Iteration improves chances of getting results (several of the Attempts returned results on the 2nd or 3rd iteration)
 
 ### Verification
-* Running the python scripts locally allows for follow-up verification of the methedology, but someone would have to actually do this. Someone capable of assessing the quality of the generated code may spend less time generating the scripts themselves.
+* Running the python scripts locally allows for follow-up verification of the methodology, but someone would have to actually do this. Someone capable of assessing the quality of the generated code may spend less time generating the scripts themselves.
 * The variety in the results (with no two attempts returning identical results, and dramatic differences in several cases) indicates there are many ways to create python scripts that do actual queries of NASA and GBIF data, which look reasonable at a high-level, and return results that don't stand out as obviously wrong, but are incorrect (assuming there is one correct answer to this question).
 
 ### Prompting
@@ -180,7 +180,7 @@ Results for temperature, pressure, and elevation from "successful" attempts are 
   * Prompt caching, particularly for genreal-use prompts like the gallery examples
   * Behavior and management of the context window
   * Generating and validation citations
-  * Anyschronous API calls that share context
+  * Asynchronous API calls that share context
   * Effective use of "tools" (client- and server-side)
   * Resource management
 
