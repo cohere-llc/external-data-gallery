@@ -104,7 +104,8 @@ class DataAgent:
                 if err:
                     logs.append(f"Error during query execution: {err}")
                     previous_errors.append(err)
-                    continue
+                    if i < max_retries - 1:
+                        continue
 
                 # Step 4: Summarize and determine if retry is needed
                 if status_callback:

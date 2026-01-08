@@ -64,7 +64,7 @@ def schema() -> Dict[str, Any]:
         "occurrence.facetMultiselect": "[bool] Set to True to still return counts for values that are not currently filtered. See examples. Default: False",
         "species.scientificName": "[str] Full scientific name potentially with authorship. (Required)",
         "species.taxonRank": "[str], optional Filter by taxonomic rank. See API reference for available values.",
-        "species.usageKey": "[str], optional The usage key to look up. When provided, all other fields are ignored.",
+        "species.usageKey": "[str], optional (NOTE: used for INPUT ONLY, use species.usage.key for OUTPUT) The usage key to look up. When provided, all other fields are ignored.",
         "species.kingdom": "[str], optional Kingdom to match.",
         "species.phylum": "[str], optional Phylum to match.",
         "species.class": "[str], optional Class to match.",
@@ -89,6 +89,7 @@ def schema() -> Dict[str, Any]:
         "species.strict": "[bool], optional If set to True, fuzzy matches only the given name, but never a taxon in the upper classification.",
         "species.verbose": "[bool], optional If set to True, shows alternative matches which were considered but then rejected.",
         "species.checklistKey": "[str], optional The key of a checklist to use. Default is the GBIF Backbone taxonomy.",
+        "species.usage.key": "[int] A GBIF species identifier (output from species functions)",
     }
     query_template = """```python
 from pygbif import species
@@ -127,14 +128,9 @@ occurrences.search(taxonKey = 3329049)
 
 occurrences.search(taxonKey=3329049, limit=2)
 
-# Instead of getting a taxon key first, you can search for a name directly
-# However, note that using this approach (with `scientificName="..."`)
-# you are getting synonyms too. The results for using `scientifcName` and
-# `taxonKey` parameters are the same in this case, but I wouldn't be surprised if for some
-# names they return different results
-occurrences.search(scientificName = 'Ursus americanus')
+# Never search for species by name directly - always get the taxonKey first
 from pygbif import species
-key = species.name_backbone(name = 'Ursus americanus', rank='species')['usageKey']
+key = species.name_backbone(name = 'Ursus americanus', rank='species')['usage']['key']
 occurrences.search(taxonKey = key)
 
 # Search by dataset key
@@ -212,11 +208,11 @@ occurrences.search(taxonKey=key, year="2013", limit=20)
 occurrences.search(taxonKey=key, month="6", limit=20)
 
 # Get occurrences based on depth
-key = species.name_backbone(name='Salmo salar', kingdom='animals')['usageKey']
+key = species.name_backbone(name='Salmo salar', kingdom='animals')['usage']['key']
 occurrences.search(taxonKey=key, depth="5", limit=20)
 
 # Get occurrences based on elevation
-key = species.name_backbone(name='Puma concolor', kingdom='animals')['usageKey']
+key = species.name_backbone(name='Puma concolor', kingdom='animals')['usage']['key']
 occurrences.search(taxonKey=key, elevation=50, hasCoordinate=True, limit=20)
 
 # Get occurrences based on institutionCode

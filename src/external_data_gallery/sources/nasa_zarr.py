@@ -16,7 +16,7 @@ def schema() -> Dict[str, Any]:
         storage_options={"anon": True}
     )
     group = zarr.open_group(store, mode="r") # pyright: ignore[reportUnknownMemberType]
-    fields = {name: array.metadata.attributes['long_name'] for name, array in group.arrays()}
+    fields = {name: f"long name: {array.metadata.attributes['long_name']}; units: {array.metadata.attributes['units']}" for name, array in group.arrays()}
     query_template = """
 ```python
 import zarr
