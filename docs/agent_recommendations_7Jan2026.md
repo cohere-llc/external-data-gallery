@@ -192,7 +192,7 @@ A draft roadmap with initial steps for development of User Support for External 
    1. Collecting user scripts
    2. Evaluating AI Models (e.g., Claude Sonnet 4.5)
    3. Exploring Agent development packages (e.g., Anthropic Python API)
-   4. Assessing existing or in-development Agents with for similar research applications
+   4. Assessing existing or in-development Agents for similar research applications
 2. Beta Gallery and Proto-Agent Development
    1. Translating, refining, documenting, and releasing user scripts for beta users
    2. Prototype agent and create development plan with approach for:
