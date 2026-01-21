@@ -12,4 +12,4 @@ Extracting data from NASA POWER for comparison with a weather monitoring station
 
 ## Usage
 
-From the [`external-data-gallery` GitHub repo](https://github.com/cohere-llc/external-data-gallery), click the Binder badge, locate the weather-station-nasa-power.ipynb Jupyter Notebook and hit the Run All button.
+From the [`external-data-gallery` GitHub repo](https://github.com/cohere-llc/external-data-gallery), click the Binder badge, locate the `weather-station-nasa-power.ipynb` Jupyter Notebook and hit the Run All button.
