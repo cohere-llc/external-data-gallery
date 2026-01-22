@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "anthropic>=0.75.0",
     "bokeh>=3.1.0",
+    "contextily>=1.7.0",
     "dask[distributed]>=2025.11.0",
     "earthengine-api>=1.7.3",
     "geodatasets>=2026.1.0",
