@@ -1,10 +1,10 @@
 # USDA SSURGO - Weather Station Comparison
 
-# Data Resources
+## Data Resources
 
 USDA SSURGO
 
-# Description
+## Description
 
 Extracting data from the USDA SSURGO database for the location of a weather monitoring station in Washington State.
 
