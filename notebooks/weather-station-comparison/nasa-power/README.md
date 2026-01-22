@@ -1,7 +1,5 @@
 # NASA POWER - Weather Station Comparison
 
-Author: Matt Dawson
-
 ## Data Resources
 
 NASA POWER
